@@ -36,6 +36,7 @@ using BlueSheep.Interface.UCs;
 using BlueSheep.Engine.Enums;
 using BlueSheep.Common;
 using System.IO;
+using System.Threading;
 
 namespace BlueSheep.Interface
 {
@@ -79,6 +80,7 @@ namespace BlueSheep.Interface
         public bool IsMITM;
         public Status state;
         public ConfigManager ConfigManager;
+        public Thread ThreadStartPath;
         #endregion
 
         #region Properties
@@ -302,7 +304,7 @@ namespace BlueSheep.Interface
 
 #endregion
 
-        #region Methodes d'interfaces
+        #region Methodes d'interfaces               
 
         private void Form_Closed(object sender, EventArgs e)
         {
@@ -508,21 +510,41 @@ namespace BlueSheep.Interface
         {
             if (Path != null)
             {
-                Path.Stop = false;
-                Log(new BotTextInformation("Lancement du trajet"),1);
-                Path.ParsePath();
+                //Path.Stop = false;
+                //Log(new BotTextInformation("Lancement du trajet"),1);
+                //Path.ParsePath();
+                if (ThreadStartPath.ThreadState == System.Threading.ThreadState.Suspended)
+                {
+                    Log(new BotTextInformation("Reprise du trajet"), 1);
+                    ThreadStartPath.Resume();
+                }
+                else
+                {
+                    Log(new BotTextInformation("Lancement du trajet"), 1);
+                    ThreadStartPath = new Thread(new ThreadStart(StartPathThread));
+                    ThreadStartPath.Start();
+                }
             }
             else
                 Log(new ErrorTextInformation("Aucun trajet chargé"),3);
+        }
+
+        public void StartPathThread()
+        {
+            Path.Stop = false;
+            Log(new BotTextInformation("Lancement du trajet"),1);
+            Path.ParsePath();
         }
 
         private void StopPathBt_Click(object sender, EventArgs e)
         {
             if (Path != null)
             {
-                Path = null;
-                PathDownBt.Text = "Trajet";
-                this.Log(new BotTextInformation("Trajet déchargé"),1);
+                //Path = null;
+                //PathDownBt.Text = "Trajet";
+                //this.Log(new BotTextInformation("Trajet déchargé"),1);
+                Log(new BotTextInformation("Trajet arrêté"), 1);
+                ThreadStartPath.Suspend();
             }
         }
 
